@@ -24,73 +24,72 @@ const NavbarItem = ({
   level,
   setSelectedNode,
   setSelectedChildren,
+  selectedSearchNode,
+  expandParents,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [children, setChildren] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageInput, setPageInput] = useState("");
-  const [visibleChildren, setVisibleChildren] = useState([]);
 
   const fontSize = 18 - depth * 2;
+
+  useEffect(() => {
+    // Check if this node is the selected search node
+    if (selectedSearchNode && selectedSearchNode.label === item.label) {
+      setIsExpanded(true); // Expand this node
+      if (Array.isArray(selectedSearchNode.children)) {
+        setSelectedChildren(selectedSearchNode.children.map(child => child.label));
+      } else {
+        setSelectedChildren([]);
+      }
+      // Ensure parents are expanded
+      expandParents(item.label);
+      setExpandedItems((prev) => ({ ...prev, [depth]: item.label }));
+    }
+  }, [selectedSearchNode, item.label, depth, expandParents, setSelectedChildren]);
 
   useEffect(() => {
     if (expandedItems[level] !== item.label && isExpanded) {
       setIsExpanded(false);
       setChildren([]);
-      visibleChildren.forEach((child) =>
-        logAction("Unsubscribed", child.label)
-      );
+      setCurrentPage(1);
+      setTotalPages(1);
     }
-  }, [expandedItems]);
+  }, [expandedItems, isExpanded, item.label, level]);
 
   const handleExpand = (event) => {
     event.stopPropagation();
+    setIsExpanded((prev) => !prev);
 
-    if (isExpanded) {
-      setIsExpanded(false);
-      setChildren([]);
-      visibleChildren.forEach((child) =>
-        logAction("Unsubscribed", child.label)
-      );
+    if (!isExpanded) {
+      setExpandedItems((prev) => ({
+        ...prev,
+        [level]: item.label,
+      }));
 
-      setSubscribedNodes((prev) => {
-        const newSet = new Set(prev);
-        visibleChildren.forEach((child) => newSet.delete(child.label));
-        return newSet;
+      loadChildren(item.label, 1).then(({ items, totalPages }) => {
+        setChildren(items);
+        setTotalPages(totalPages);
+
+        // Log subscription actions
+        if (!subscribedNodes.has(item.label)) {
+          logAction("Subscribed", item.label);
+          setSubscribedNodes((prev) => new Set(prev).add(item.label));
+        }
+
+        items.forEach((child) => {
+          if (!subscribedNodes.has(child.label)) {
+            logAction("Subscribed", child.label);
+            setSubscribedNodes((prev) => new Set(prev).add(child.label));
+          }
+        });
       });
-
-      return;
     }
-
-    setExpandedItems((prev) => ({
-      ...prev,
-      [level]: item.label,
-    }));
-
-    loadChildren(item.label, 1).then(({ items, totalPages }) => {
-      setChildren(items);
-      setTotalPages(totalPages);
-      setCurrentPage(1);
-      setIsExpanded(true);
-
-      if (!subscribedNodes.has(item.label)) {
-        logAction("Subscribed", item.label);
-        setSubscribedNodes((prev) => new Set(prev).add(item.label));
-      }
-
-      setVisibleChildren(items);
-      items.forEach((child) => {
-        logAction("Subscribed", child.label);
-        setSubscribedNodes((prev) => new Set(prev).add(child.label));
-      });
-    });
   };
 
   const handleNodeClick = async () => {
-    if (typeof setSelectedNode === "function") {
-      setSelectedNode({ label: item.label, isActive: item.isActive });
-    }
+    setSelectedNode({ label: item.label, isActive: item.isActive });
 
     let childrenData = [];
 
@@ -107,7 +106,7 @@ const NavbarItem = ({
       }));
     }
 
-    setSelectedChildren([...childrenData]);
+    setSelectedChildren(childrenData);
   };
 
   const loadPage = (page) => {
@@ -116,29 +115,18 @@ const NavbarItem = ({
     loadChildren(item.label, page).then(({ items }) => {
       setChildren(items);
       setCurrentPage(page);
-      setPageInput("");
+      setSelectedChildren((prev) => [
+        ...prev,
+        ...items.filter((child) => !prev.some((c) => c.label === child.label)),
+      ]);
 
-      setSelectedChildren((prev) => {
-        const mergedChildren = [
-          ...prev,
-          ...items.filter(
-            (child) => !prev.some((c) => c.label === child.label)
-          ),
-        ];
-        return mergedChildren;
-      });
-
-      visibleChildren.forEach((child) =>
-        logAction("Unsubscribed", child.label)
-      );
-      setVisibleChildren(items);
       items.forEach((child) => logAction("Subscribed", child.label));
     });
   };
 
   const handlePageInput = (event) => {
     if (event.key === "Enter") {
-      loadPage(Number(pageInput));
+      loadPage(Number(event.target.value));
     }
   };
 
@@ -150,13 +138,13 @@ const NavbarItem = ({
           fontSize: `${fontSize}px`,
           paddingLeft: `${depth * 10 + 10}px`,
         }}
+        onClick={handleExpand}
       >
         {item.children && (
           <i
             className={`bi ${
               isExpanded ? "bi-arrow-down-square-fill" : "bi-arrow-right-square"
             } navbar_icon navbar_icon_bold`}
-            onClick={handleExpand}
           ></i>
         )}
         <span className="navbar_text" onClick={handleNodeClick}>
@@ -179,6 +167,8 @@ const NavbarItem = ({
               level={depth + 1}
               setSelectedNode={setSelectedNode}
               setSelectedChildren={setSelectedChildren}
+              selectedSearchNode={selectedSearchNode}
+              expandParents={expandParents}
             />
           ))}
           {totalPages > 1 && (
@@ -194,8 +184,8 @@ const NavbarItem = ({
                 type="number"
                 className="navbar_page_input"
                 placeholder={`Page ${currentPage} of ${totalPages}`}
-                value={pageInput}
-                onChange={(e) => setPageInput(e.target.value)}
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
                 onKeyDown={handlePageInput}
                 min="1"
                 max={totalPages}
