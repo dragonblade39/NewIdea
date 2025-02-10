@@ -1,0 +1,153 @@
+.modal_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal_container {
+  background: #014572;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  width: 400px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  color: #e0e0e0;
+}
+
+.modal_search {
+  width: 95%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  outline: none;
+}
+
+.modal_search::placeholder {
+  color: #b0bec5;
+}
+
+.modal_search:focus {
+  background: rgba(255, 255, 255, 0.3);
+  outline: 2px solid #81d4fa;
+}
+
+.parent_node {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  padding-top: 0px;
+  border-radius: 8px;
+}
+
+.modal_content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-bottom: 10px;
+  max-height: 300px;
+}
+
+.modal_content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal_content::-webkit-scrollbar-thumb {
+  background: #81d4fa;
+  border-radius: 3px;
+}
+
+.modal_content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tree_list {
+  list-style-type: none;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.tree_node {
+  font-size: 16px;
+  margin: 5px 0;
+  font-weight: bold;
+  padding-left: 10px;
+}
+
+.tree_node::before {
+  content: "│  ";
+  color: #81d4fa;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.parent_node::before {
+  content: "";
+}
+
+.parent_node p {
+  margin: 0px;
+}
+
+.tree_node:last-child::before {
+  content: "└── ";
+}
+
+.active_status {
+  color: #00e676;
+}
+
+.inactive_status {
+  color: #ff5252;
+}
+
+.no_children_text {
+  color: #b0bec5;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.modal_footer {
+  position: sticky;
+  bottom: 0;
+  background: #014572;
+  padding: 10px;
+  text-align: center;
+}
+
+.modal_close_btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: #007bb5;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  font-weight: bold;
+}
+
+.modal_close_btn:hover {
+  background: #005f87;
+}
+
+.modal_close_btn:active {
+  transform: scale(0.95);
+}

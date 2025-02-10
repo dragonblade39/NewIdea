@@ -1,0 +1,41 @@
+.status_box {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #b3e5fc;
+  backdrop-filter: blur(30px) saturate(100%);
+  border-style: outset;
+  border-color: #03bfff;
+  border-width: 2px;
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  color: #004878;
+  padding: 15px 20px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  min-width: 220px;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status_active {
+  color: #039363;
+  text-shadow: 0px 0px 8px rgba(0, 255, 170, 0.5);
+}
+
+.status_inactive {
+  color: #f33f3f;
+  text-shadow: 0px 0px 4px rgba(255, 122, 122, 0.5);
+}
+
+.status_icon {
+  font-size: 22px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.status_icon:hover {
+  color: #004878;
+}
