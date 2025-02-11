@@ -13,7 +13,14 @@ const Navbar = () => {
   const [elementSearch, setElementSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedSearchNode, setSelectedSearchNode] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+
+  const assignParents = (nodes, parent = null) => {
+    return nodes.map((node) => ({
+      ...node,
+      parent: parent,
+      children: node.children ? assignParents(node.children, node) : [],
+    }));
+  };
 
   useEffect(() => {
     fetch("/TreeViewContent.json")
@@ -82,14 +89,76 @@ const Navbar = () => {
   const handleInputChange = (e) => {
     const value = e.target.value;
     setElementSearch(value);
-    handleSearch(value);
   };
 
-  // Function to search through the loaded data
   const handleSearch = (term) => {
-    const results = filterTreeItems(loadedData, term);
-    setSearchResults(results);
+    // On new search, reset selection and expanded items
+    setSelectedSearchNode(null);
+    setExpandedItems({}); // Clear existing expansion
+
+    if (!term) {
+        return; // If the term is empty, early exit
+    }
+
+    let firstMatch = null;
+    const searchFirstNode = (items) => {
+        // Ensure 'items' is an array
+        if (!Array.isArray(items)) return;
+
+        for (let item of items) {
+            if (item.label.toLowerCase().includes(term.toLowerCase())) {
+                firstMatch = item;
+                return; 
+            }
+            if (item.children) {
+                searchFirstNode(item.children);
+            }
+            if (firstMatch) return; 
+        }
+    };
+
+    // Call the search function on the loaded data
+    const dataToSearch = Array.isArray(loadedData) ? loadedData : [];
+    searchFirstNode(dataToSearch); 
+
+    if (firstMatch) {
+        setSelectedSearchNode(firstMatch);
+        expandParents(firstMatch.label); // Ensure the parents are expanded
+    }
+};
+
+  const expandParents = (label) => {
+    const node = findNodeByLabel(loadedData, label);
+    if (!node) return;
+    const newExpanded = {};
+    // Always start with "Root" at level 0.
+    newExpanded[0] = "Root";
+    if (node.parent === null) {
+      newExpanded[1] = node.label;
+    } else {
+      const chain = [];
+      let currentNode = node;
+      while (currentNode.parent) {
+        chain.unshift(currentNode.parent.label);
+        currentNode = currentNode.parent;
+      }
+      if (chain[0] === "Root") {
+        chain.shift();
+      }
+      chain.forEach((lbl, index) => {
+        newExpanded[index + 1] = lbl;
+      });
+      newExpanded[chain.length + 1] = node.label;
+    }
+    setExpandedItems(newExpanded);
   };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch(e.target.value);
+    }
+  };
+
 
   const findNodeByLabel = (data, label) => {
     for (let node of data) {
@@ -149,23 +218,8 @@ const Navbar = () => {
       className="navbarmain_page_input"
       value={elementSearch}
       onChange={handleInputChange}
+      onKeyDown={handleKeyDown}
     />
-    {searchResults.length > 0 && (
-      <div className="search-results">
-        {searchResults.map((result) => (
-          <div key={result.label} className="search-result-item">
-            {result.label} {/* Customize how results are rendered */}
-            {result.children && result.children.length > 0 && (
-              <ul>
-                {result.children.map((child) => (
-                  <li key={child.label}>{child.label}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
-    )}
       <hr className="navbar_hr" />
       <NavbarItem
         item={{ label: "Root", children: [] }}

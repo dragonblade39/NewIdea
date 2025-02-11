@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import "./Navbar.css";
 
 const logAction = async (action, label) => {
@@ -31,32 +31,62 @@ const NavbarItem = ({
   const [children, setChildren] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const itemRef = useRef(null);
 
   const fontSize = 18 - depth * 2;
 
-  useEffect(() => {
-    // Check if this node is the selected search node
-    if (selectedSearchNode && selectedSearchNode.label === item.label) {
-      setIsExpanded(true); // Expand this node
-      if (Array.isArray(selectedSearchNode.children)) {
-        setSelectedChildren(selectedSearchNode.children.map(child => child.label));
-      } else {
-        setSelectedChildren([]);
-      }
-      // Ensure parents are expanded
-      expandParents(item.label);
-      setExpandedItems((prev) => ({ ...prev, [depth]: item.label }));
-    }
-  }, [selectedSearchNode, item.label, depth, expandParents, setSelectedChildren]);
+  // useEffect(() => {
+  //   // Check if this node is the selected search node
+  //   if (selectedSearchNode && selectedSearchNode.label === item.label) {
+  //     setIsExpanded(true); // Expand this node
+  //     if (Array.isArray(selectedSearchNode.children)) {
+  //       setSelectedChildren(selectedSearchNode.children.map(child => child.label));
+  //     } else {
+  //       setSelectedChildren([]);
+  //     }
+  //     // Ensure parents are expanded
+  //     expandParents(item.label);
+  //     setExpandedItems((prev) => ({ ...prev, [depth]: item.label }));
+  //   }
+  // }, [selectedSearchNode, item.label, depth, expandParents, setSelectedChildren]);
+
+  // useEffect(() => {
+  //   if (expandedItems[level] !== item.label && isExpanded) {
+  //     setIsExpanded(false);
+  //     setChildren([]);
+  //     setCurrentPage(1);
+  //     setTotalPages(1);
+  //   }
+  // }, [expandedItems, isExpanded, item.label, level]);
 
   useEffect(() => {
-    if (expandedItems[level] !== item.label && isExpanded) {
+    if (expandedItems[level] === item.label) {
+      setIsExpanded(true);
+      // Auto-load children if not yet loaded.
+      if (children.length === 0) {
+        loadChildren(item.label, 1).then(({ items, totalPages }) => {
+          setChildren(items);
+          setTotalPages(totalPages);
+        });
+      }
+    } else {
       setIsExpanded(false);
       setChildren([]);
       setCurrentPage(1);
       setTotalPages(1);
     }
-  }, [expandedItems, isExpanded, item.label, level]);
+  }, [expandedItems, level, item.label, children.length, loadChildren]);
+
+  // When this node matches the searched node, scroll it into view.
+  useEffect(() => {
+    if (
+      selectedSearchNode &&
+      selectedSearchNode.label === item.label &&
+      itemRef.current
+    ) {
+      itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [selectedSearchNode, item.label]);
 
   const handleExpand = (event) => {
     event.stopPropagation();
